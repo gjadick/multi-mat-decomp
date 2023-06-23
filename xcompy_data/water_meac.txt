@@ -1,0 +1,1 @@
+The .mat file with the same title contains the mass energy absorption coefficient in cm^2/g for water from 1 to 140 keV sampled at 1000 points.

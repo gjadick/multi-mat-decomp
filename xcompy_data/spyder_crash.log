@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/usr/lib/python2.6/site-packages/spyderlib/spyder.py", line 1920, in main
+    mainwindow = run_spyder(app, options)
+  File "/usr/lib/python2.6/site-packages/spyderlib/spyder.py", line 1832, in run_spyder
+    main.setup()
+  File "/usr/lib/python2.6/site-packages/spyderlib/spyder.py", line 679, in setup
+    self.projectexplorer = ProjectExplorer(self)
+  File "/usr/lib/python2.6/site-packages/spyderlib/plugins/projectexplorer.py", line 28, in __init__
+    show_all=self.get_option('show_all', False))
+  File "/usr/lib/python2.6/site-packages/spyderlib/widgets/projectexplorer.py", line 1199, in __init__
+    self.setup_layout(name_filters, valid_types, show_all)
+  File "/usr/lib/python2.6/site-packages/spyderlib/widgets/projectexplorer.py", line 1208, in setup_layout
+    self.treewidget = ExplorerTreeWidget(self)
+  File "/usr/lib/python2.6/site-packages/spyderlib/widgets/projectexplorer.py", line 479, in __init__
+    self.reset_icon_provider()
+  File "/usr/lib/python2.6/site-packages/spyderlib/widgets/projectexplorer.py", line 609, in reset_icon_provider
+    def reset_icon_provider(self):
+KeyboardInterrupt
