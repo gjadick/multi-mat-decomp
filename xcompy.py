@@ -44,7 +44,7 @@ def elematten(elem,E=np.array([-1]),attentype = 'total'):
     """
 
     zerostr = (3-len(str(elem)))*'0'
-    f = open(rootpath +'/xcompy_data/MDATX3.'+ zerostr + str(elem))
+    f = open(rootpath +'/input/xcompy_data/MDATX3.'+ zerostr + str(elem))
 
     # read the entire text file into a 'fulltext'
     fulltext = f.read().split()
@@ -328,7 +328,7 @@ def getAtomicMass(elem):
     OUTPUTS:
     amass - double specifiying atomic mass in grams per mole
     """
-    f = open(rootpath +'/xcompy_data/MDATX3.'+'%03d'%elem)
+    f = open(rootpath +'/input/xcompy_data/MDATX3.'+'%03d'%elem)
     return float(f.readline().split()[1])
 
 
@@ -349,7 +349,7 @@ def gridenergies(elem):
     """
 
     zerostr = (3-len(str(elem)))*'0'
-    f = open(rootpath + '/xcompy_data/MDATX3.'+ zerostr + str(elem))
+    f = open(rootpath + '/input/xcompy_data/MDATX3.'+ zerostr + str(elem))
 
     # read the entire text file into a 'fulltext'
     fulltext = f.read().split()
@@ -381,7 +381,7 @@ def gridenergies(elem):
 def getRho(matname):
 
     # read file  into 2d array of strings
-    f = open(rootpath +'/xcompy_data/lookuptable.txt')
+    f = open(rootpath +'/input/xcompy_data/lookuptable.txt')
     fulltext = f.read()
     fulltext = fulltext[0:-1]
     fulltext = fulltext.split('\n')
@@ -402,7 +402,7 @@ def getRho(matname):
 def getFormula(matname):
 
     # read file  into 2d array of strings
-    f = open(rootpath +'/xcompy_data/lookuptable.txt')
+    f = open(rootpath +'/input/xcompy_data/lookuptable.txt')
     fulltext = f.read()
     fulltext = fulltext[0:-1]
 
