@@ -31,13 +31,21 @@ class Material:
         self.matcomp_dict = matcomp_dict
         self.matcomp = convert_nist_str(matcomp_dict)
 
+    def set_density(self, p):
+        self.density = p
+
     def init_atten_coeffs(self, E):
         mass_attens = xc.mixatten(self.matcomp, np.array(E).astype(np.float64))
         linear_attens = self.density * mass_attens
+        self.E = E
         self.mu_rho = mass_attens
         self.mu = linear_attens
         return mass_attens, linear_attens
 
+    def add_water(self):
+        mu_water = xc.mixatten('H(11.1898)O(88.8102)', self.E)
+        self.mu += mu_water # mess up mu_rho?
+        
 def dilute_contrast(mat_0, mat_contrast, mg_ml):
     '''
     Create new diluted contrast material in a medium
