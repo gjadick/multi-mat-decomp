@@ -1,0 +1,31 @@
+### ACQUISITION
+sino - 1200 x 800
+SID - 60 cm 
+SDD - 100 cm
+fan - 47 deg 
+
+### RECON
+matrix - 512 x 512
+FOV - 50 cm
+ramp - 100%
+
+### BEAM HARDENING CORRECTION (BHC)
+water - 120kVp, ideal detector
+effective energies - E80kV=46, E140kV=53
+
+### RESCALE METHOD FOR BHC
+"bone_corr" used a linear combo:
+    bone_corr = orig + bone_art*C, 
+where C was hand tuned for 80kVp and 140kVp:
+    C1 - 80kVp - 0.028
+    C2 - 140kV - 0.065
+
+"bone_corr2" was meant to rescale the mu values of 
+bone_corr to those in the original images, since the 
+earlier linear combo distorted those values. It used
+a rescale factor of s = max(orig)/max(bone_corr) for 
+each kVp, which ended up being:
+    s1 - 80kVp - 0.78814775
+    s2 - 140kVp - 0.8924156
+So, the new images were:
+    bone_corr2 = s*bone_corr
