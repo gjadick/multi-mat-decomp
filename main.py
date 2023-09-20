@@ -9,7 +9,8 @@ Created on Thu Aug 10 12:38:22 2023
 import numpy as np
 
 i_bmis = 2  # 1 for tiss/bone, 2 for H2O/Al
-doses = [0.1]#np.arange(0.1, 2.1, 0.1) 
+#doses = [0.1]
+doses = np.arange(0.1, 2.2, 0.1) 
 #doses = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 2.0]
 
 from scipy.spatial import Delaunay
@@ -165,155 +166,165 @@ plt.rcParams.update({
 
 
 #%%
+if __name__ == '__main__':
 
-## ground truth phantom
-phantom_id = 'cylinder_5mats'
-N_phantom = 512
-fname_phantom = f'input/sim_{phantom_id}/raw/{phantom_id}_{N_phantom}x{N_phantom}_uint8.bin'
-phantom = np.fromfile(fname_phantom, dtype=np.uint8).reshape([N_phantom, N_phantom]).T
-matcomp_dict = {
- 0: ['air',             0.001205, 'C(0.0124)N(75.5268)O(23.1781)Ar(1.2827)'],
- 1: ['water',           1.0,      'H(11.2)O(88.8)'],
- 2: ['tissue_icru',     1.06,     'H(10.2)C(14.3)N(3.4)O(70.8)Na(0.2)P(0.3)S(0.3)Cl(0.2)K(0.3)'],
- 3: ['fat',             0.95,     'H(11.4000)C(59.8000)N(0.7000)O(27.8000)Na(0.1000)S(0.1000)Cl(0.1000)'],
- 4: ['calcium',         1.55,     'Ca(1.0)'],
- 5: ['omni300_in_blood',1.06,     'H(8.7983)C(14.3582)N(3.6635)O(63.1072)Na(0.0800)P(0.0800)S(0.1600)Cl(0.2400)K(0.1600)Fe(0.0800)I(9.2728)']
- }
+    ## input basis material images
+    if i_bmis == 1:
+        matcomp1 = 'H(10.2)C(14.3)N(3.4)O(70.8)Na(0.2)P(0.3)S(0.3)Cl(0.2)K(0.3)'   # tissue
+        matcomp2 = 'H(3.4)C(15.5)N(4.2)O(43.5)Na(0.1)Mg(0.2)P(10.3)S(0.3)Ca(22.5)' # bone
+    elif i_bmis == 2:
+        matcomp1 = 'H2O'      # water
+        matcomp2 = 'Al(1.0)'  # aluminum
 
-matnames = [matcomp_dict[m][0] for m in matcomp_dict]
-print('materials:', matnames)
+    ## ground truth phantom
+    phantom_id = 'cylinder_5mats'
+    N_phantom = 512
+    fname_phantom = f'input/sim_{phantom_id}/raw/{phantom_id}_{N_phantom}x{N_phantom}_uint8.bin'
+    phantom = np.fromfile(fname_phantom, dtype=np.uint8).reshape([N_phantom, N_phantom]).T
+    matcomp_dict = {
+     0: ['air',             0.001205, 'C(0.0124)N(75.5268)O(23.1781)Ar(1.2827)'],
+     1: ['water',           1.0,      'H(11.2)O(88.8)'],
+     2: ['tissue_icru',     1.06,     'H(10.2)C(14.3)N(3.4)O(70.8)Na(0.2)P(0.3)S(0.3)Cl(0.2)K(0.3)'],
+     3: ['fat',             0.95,     'H(11.4000)C(59.8000)N(0.7000)O(27.8000)Na(0.1000)S(0.1000)Cl(0.1000)'],
+     4: ['calcium',         1.55,     'Ca(1.0)'],
+     5: ['omni300_in_blood',1.06,     'H(8.7983)C(14.3582)N(3.6635)O(63.1072)Na(0.0800)P(0.0800)S(0.1600)Cl(0.2400)K(0.1600)Fe(0.0800)I(9.2728)']
+     }
+    
+    matnames = [matcomp_dict[m][0] for m in matcomp_dict]
+    print('materials:', matnames)
+    
+    ## input basis material images
+    kVp1, kVp2 = 80, 140
+    N_matrix = 512 # matrix size
+    D = 0.5  # dose
+    E1, E2 = 70, 140  # vmi energies
+    
+    def get_fname(i_mat, dose, i_run=1):
+        rootdir = f'./input/sim_{phantom_id}/two_mat_decomp/matdecomp{i_run}_{kVp1}kV_{kVp2}kV/'
+        return rootdir + f'{int(dose*1000):04}uGy_{int(dose*1000):04}uGy/mat{i_mat}_recon_512_50cm_100ramp.bin'
+            
+    
+    ### EXAMPLE IMAGES 
+    example=False
+    if example:
+        img_mat1 = np.fromfile(get_fname(1, D), dtype=np.float32).reshape([N_matrix, N_matrix])
+        img_mat2 = np.fromfile(get_fname(2, D), dtype=np.float32).reshape([N_matrix, N_matrix])
+    
 
-## input basis material images
-kVp1, kVp2 = 80, 140
-N_matrix = 512 # matrix size
-D = 0.5  # dose
-E1, E2 = 70, 140  # vmi energies
-
-def get_fname(i_mat, dose, i_run=1):
-    rootdir = f'./input/sim_{phantom_id}/two_mat_decomp/matdecomp{i_run}_{kVp1}kV_{kVp2}kV/'
-    return rootdir + f'{int(dose*1000):04}uGy_{int(dose*1000):04}uGy/mat{i_mat}_recon_512_50cm_100ramp.bin'
+        vmi1 = make_vmi(E1, img_mat1, img_mat2, matcomp1, matcomp2)
+        vmi2 = make_vmi(E2, img_mat1, img_mat2, matcomp1, matcomp2)
+    
+        fig,ax=plt.subplots(1,2,figsize=[7,3])
+        m = ax[0].imshow(vmi1, cmap='gray',vmin=0.18,vmax=0.21)
+        fig.colorbar(m, ax=ax[0])
+        m = ax[1].imshow(vmi2, cmap='gray', vmin=0.14,vmax=0.19)
+        fig.colorbar(m, ax=ax[1])
+        for axi in ax:
+            axi.axis('off')
+        fig.tight_layout()
+        plt.show()
+    
+    
+    
+    
+    #### now, actually test things
+    #%%  run the multi mat decomp
+    
+    
+    
+    outdir = f'output/sim_{phantom_id}/'
+    os.makedirs(outdir, exist_ok=True)
+    
+    ## multi-mat decomp parameters 
+    matlib = [matcomp_dict[m] for m in matcomp_dict.keys()]
+    
+    # init some figures
+    noise1 = []
+    noise2 = []
+    
+    t0 = time()
+    i_calc = 1 
+    N_calc = len(doses)
+    
+    # doses
+    for D in doses: #np.arange(0.1,0.2,0.1):#1.2,0.1):#np.arange(0.5,3,0.5):#[0.5]:
+        outdirD = outdir + f'matdecomp{i_bmis}_{int(1000*D)}uGy/'
+        os.makedirs(outdirD, exist_ok=True)
+    
+        ## 1. load VMIs
+        img_mat1 = np.fromfile(get_fname(1, D, i_run=i_bmis), dtype=np.float32).reshape([N_matrix, N_matrix])
+        img_mat2 = np.fromfile(get_fname(2, D, i_run=i_bmis), dtype=np.float32).reshape([N_matrix, N_matrix])
         
-
-### EXAMPLE IMAGES 
-example=False
-if example:
-    img_mat1 = np.fromfile(get_fname(1, D), dtype=np.float32).reshape([N_matrix, N_matrix])
-    img_mat2 = np.fromfile(get_fname(2, D), dtype=np.float32).reshape([N_matrix, N_matrix])
-
-    vmi1 = make_vmi(E1, img_mat1, img_mat2)
-    vmi2 = make_vmi(E2, img_mat1, img_mat2)
-
-    fig,ax=plt.subplots(1,2,figsize=[7,3])
-    m = ax[0].imshow(vmi1, cmap='gray',vmin=0.18,vmax=0.21)
-    fig.colorbar(m, ax=ax[0])
-    m = ax[1].imshow(vmi2, cmap='gray', vmin=0.14,vmax=0.19)
-    fig.colorbar(m, ax=ax[1])
-    for axi in ax:
-        axi.axis('off')
-    fig.tight_layout()
-    plt.show()
-
-
-
-
-#### now, actually test things
-#%%  run the multi mat decomp
-
-
-
-outdir = f'output/sim_{phantom_id}/'
-os.makedirs(outdir, exist_ok=True)
-
-## multi-mat decomp parameters 
-matlib = [matcomp_dict[m] for m in matcomp_dict.keys()]
-
-# init some figures
-noise1 = []
-noise2 = []
-
-t0 = time()
-i_calc = 1 
-N_calc = len(doses)
-
-# doses
-for D in doses: #np.arange(0.1,0.2,0.1):#1.2,0.1):#np.arange(0.5,3,0.5):#[0.5]:
-    outdirD = outdir + f'matdecomp{i_bmis}_{int(1000*D)}uGy/'
-    os.makedirs(outdirD, exist_ok=True)
-
-    ## 1. load VMIs
-    img_mat1 = np.fromfile(get_fname(1, D, i_run=i_bmis), dtype=np.float32).reshape([N_matrix, N_matrix])
-    img_mat2 = np.fromfile(get_fname(2, D, i_run=i_bmis), dtype=np.float32).reshape([N_matrix, N_matrix])
+        vmi1 = make_vmi(E1, img_mat1, img_mat2, matcomp1, matcomp2)
+        vmi2 = make_vmi(E2, img_mat1, img_mat2, matcomp1, matcomp2)
+        
+        vmi1_HU = to_HU(vmi1, E1)
+        vmi2_HU = to_HU(vmi2, E2)
+       
     
-    vmi1 = make_vmi(E1, img_mat1, img_mat2)
-    vmi2 = make_vmi(E2, img_mat1, img_mat2)
+        ## 2. measure reference noise (HU)
+        dx, dy = 512//8, 512//8
+        x0, y0 = (512-dx)//2, (512-dy)//2
     
-    vmi1_HU = to_HU(vmi1, E1)
-    vmi2_HU = to_HU(vmi2, E2)
-   
-
-    ## 2. measure reference noise (HU)
-    dx, dy = 512//8, 512//8
-    x0, y0 = (512-dx)//2, (512-dy)//2
-
-    std1 = np.std(vmi1_HU[y0:y0+dy, x0:x0+dx]) 
-    std2 = np.std(vmi2_HU[y0:y0+dy, x0:x0+dx]) 
-    noise1.append(std1)
-    noise2.append(std2)
-    fig,ax=plt.subplots(1,2,figsize=[6,3.1])
-    ax[0].set_title(f'{E1} keV')
-    ax[1].set_title(f'{E2} keV')
-    m = ax[0].imshow(vmi1_HU, cmap='gray',vmin=-50, vmax=50)
-    m = ax[1].imshow(vmi2_HU, cmap='gray', vmin=-50, vmax=50)
-    cbaxes = fig.add_axes([1.008, 0.05, 0.03, 0.88])
-    cb = plt.colorbar(m, cax=cbaxes, label='HU')
-    for axi in ax:
-        axi.axis('off')
-        rect = patches.Rectangle((x0, y0), dx, dy, linewidth=.5, edgecolor='red', facecolor='none')
-        axi.add_patch(rect)
-    label_panels(ax, c='w', loc='inside', dx=0.07, dy= 0.05)
-    fig.tight_layout()
-    #plt.show()
-    plt.savefig(outdirD+f'vmis_roi.png', bbox_inches="tight")
-    plt.close()
-   
-
-    ## 3. create tesselations
-    fig, ax = plot_tessel(matlib, E1, E2, imgs=[vmi1, vmi2], show=False)
-    ax.set_xlim(0,0.85)
-    ax.set_ylim(0,0.31)
-    fig.suptitle(f'{D:.1f} mGy')
-    #plt.show()
-    plt.savefig(outdirD+'tessel.png', bbox_inches="tight")
-    plt.close()
-
-
-    ## 4. compute basis mat images + figures of merit
-    basis_img_dict = mmd(E1, E2, vmi1, vmi2, matlib)
-    cnrs = []
-    rmses = []
-    for i_mat, matname in enumerate(matnames):#list(basis_img_dict.keys())):  # this order must match the phantom inds!!!
-        bmi = basis_img_dict[matname] 
-        bmi.astype(np.float32).tofile(outdirD+f'{matname}.bin')
-
-        # 4a. RMSE
-        rmse_cyl = calc_rmse_cyl(i_mat, bmi, phantom)
-        rmses.append(rmse_cyl)
-
-        # 4b. CNR
-        cnr_cyl = calc_cnr_cyl(i_mat, bmi, phantom)
-        cnrs.append(cnr_cyl)
-
-    # save figures for that dose level
-    np.array(rmses).astype(np.float32).tofile(outdirD+'rmse.bin')
-    np.array(cnrs).astype(np.float32).tofile(outdirD+'cnr.bin')
-
-    # print timing 
-    print(f'{i_calc}/{N_calc} - {D:.1f} mGy - {timedelta(seconds=int(time()-t0))}')
-    i_calc+=1
-
-# save noise measurements for all dose levels/the two VMIs
-all_noise = np.array([doses, noise1, noise2]).astype(np.float32)
-all_noise.tofile(outdir+f'matdecomp{i_bmis}_noise_{E1}_{E2}.bin')
-
-
-
+        std1 = np.std(vmi1_HU[y0:y0+dy, x0:x0+dx]) 
+        std2 = np.std(vmi2_HU[y0:y0+dy, x0:x0+dx]) 
+        noise1.append(std1)
+        noise2.append(std2)
+        fig,ax=plt.subplots(1,2,figsize=[6,3.1])
+        ax[0].set_title(f'{E1} keV')
+        ax[1].set_title(f'{E2} keV')
+        m = ax[0].imshow(vmi1_HU, cmap='gray',vmin=-50, vmax=50)
+        m = ax[1].imshow(vmi2_HU, cmap='gray', vmin=-50, vmax=50)
+        cbaxes = fig.add_axes([1.008, 0.05, 0.03, 0.88])
+        cb = plt.colorbar(m, cax=cbaxes, label='HU')
+        for axi in ax:
+            axi.axis('off')
+            rect = patches.Rectangle((x0, y0), dx, dy, linewidth=.5, edgecolor='red', facecolor='none')
+            axi.add_patch(rect)
+        label_panels(ax, c='w', loc='inside', dx=0.07, dy= 0.05)
+        fig.tight_layout()
+        #plt.show()
+        plt.savefig(outdirD+f'vmis_roi.png', bbox_inches="tight")
+        plt.close()
+       
+    
+        ## 3. create tesselations
+        fig, ax = plot_tessel(matlib, E1, E2, imgs=[vmi1, vmi2], show=False)
+        ax.set_xlim(0,0.85)
+        ax.set_ylim(0,0.31)
+        fig.suptitle(f'{D:.1f} mGy')
+        #plt.show()
+        plt.savefig(outdirD+'tessel.png', bbox_inches="tight")
+        plt.close()
+    
+    
+        ## 4. compute basis mat images + figures of merit
+        basis_img_dict = mmd(E1, E2, vmi1, vmi2, matlib)
+        cnrs = []
+        rmses = []
+        for i_mat, matname in enumerate(matnames):#list(basis_img_dict.keys())):  # this order must match the phantom inds!!!
+            bmi = basis_img_dict[matname] 
+            bmi.astype(np.float32).tofile(outdirD+f'{matname}.bin')
+    
+            # 4a. RMSE
+            rmse_cyl = calc_rmse_cyl(i_mat, bmi, phantom)
+            rmses.append(rmse_cyl)
+    
+            # 4b. CNR
+            cnr_cyl = calc_cnr_cyl(i_mat, bmi, phantom)
+            cnrs.append(cnr_cyl)
+    
+        # save figures for that dose level
+        np.array(rmses).astype(np.float32).tofile(outdirD+'rmse.bin')
+        np.array(cnrs).astype(np.float32).tofile(outdirD+'cnr.bin')
+    
+        # print timing 
+        print(f'{i_calc}/{N_calc} - {D:.1f} mGy - {timedelta(seconds=int(time()-t0))}')
+        i_calc+=1
+    
+    # save noise measurements for all dose levels/the two VMIs
+    all_noise = np.array([doses, noise1, noise2]).astype(np.float32)
+    all_noise.tofile(outdir+f'matdecomp{i_bmis}_noise_{E1}_{E2}.bin')
+    
+    
+    

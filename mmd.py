@@ -202,48 +202,30 @@ def plot_tessel(mats, E1, E2, xy=None, imgs=None, show=True):
         return fig, ax
 
 
-
-def make_vmi(E0, img1, img2, HU=False):
-    '''
+def make_vmi(E0, img1, img2, matcomp1, matcomp2, HU=False):
+    """
     Function to compute virtual monoenergetic image (VMI) 
     from two input basis material images (img1, img2).
     The images img1 and img2 should have pixels in units
     of g/cm^3. The energy at which to evaluate the VMI (E0) 
-    should be in units keV.
-    
-    The scaling factors (mass attenuation coefficients or MACs)
-    for computing the VMIs are in the data file `vmi_data.txt`
-    
-    Example usage:
-        `vmi = make_vmi(80.0, img_mat1, img_mat2)`
+    should be in units keV. The material compositions 
+    of the basis material images is given in matcomp1, matcomp2.    
+    The scaling factors (mass attenuation coefficients) are 
+    then computed using xcompy.
     
     Optional argument "HU" (default True) changes the units
     of the pixels in the output image. If True, images are
     in Hounsfield Units. If False, units are the linear
-    attenuation coefficients (LACs).
-    '''
-    # input check
-    if E0 < 1 or E0 > 2000:
-        print('input energy E0 should be >1 keV and <2000 keV')
-        
-    # read the data file -- must be called `vmi_data.txt` and in the `input` folder  
-    data = []
-    f = open('input/vmi_data.txt', 'r')
-    for line in f.readlines()[1:]:  # skip 1st line, header
-        data.append(np.array(line.split(), dtype=np.float64))
-    f.close()
-    data = np.array(data).T
-    E, mac1_E, mac2_E, mac_water_E = data
-    mac1 = np.interp(E0, E, mac1_E)
-    mac2 = np.interp(E0, E, mac2_E)
-    mu_water = np.interp(E0, E, mac_water_E)
-    
-    # compute the VMI
+    attenuation coefficients.
+    """
+    mac1 = xc.mixatten(matcomp1, np.array([E0]).astype(np.float64))
+    mac2 = xc.mixatten(matcomp2, np.array([E0]).astype(np.float64))
     vmi = mac1*img1 + mac2*img2
     if HU:
-        vmi = 1000*(vmi-mu_water)/mu_water
-        
+        u_w =  1.0 * xc.mixatten('H(11.2)O(88.8)',  np.array([E0]).astype(np.float64))
+        vmi = 1000*(vmi-u_w)/u_w
     return vmi.astype(np.float32)
+    
 
 
 ### combining Omni + blood
