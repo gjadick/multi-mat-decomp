@@ -14,13 +14,13 @@ from scipy.spatial import Delaunay
 
 
 def md3_area(mu, triple):
-    '''
+    """
     input:
         mu - vec of measured mu at E1, E2
         triple - triangle with true basis material mu(E1, E2) vertices
     output:
         alphas - volume fractions
-    '''
+    """
     A1 = tri_area(mu, triple[1], triple[2])
     A2 = tri_area(mu, triple[0], triple[2])
     A3 = tri_area(mu, triple[0], triple[1])
@@ -39,10 +39,10 @@ def tri_area(p1, p2, p3):
 
 # choose optimal triangle
 def is_inside(mu, triple, EPS=1e-8):
-    '''
+    """
     a point P is inside a triangle ABC if 
     the sum of areas of PAB, PBC, PAC = area of ABC
-    '''
+    """
     A = tri_area(triple[0], triple[1], triple[2])
     A1 = tri_area(mu, triple[0], triple[1])
     A2 = tri_area(mu, triple[1], triple[2])
@@ -53,10 +53,10 @@ def is_inside(mu, triple, EPS=1e-8):
         
 # in case the point is not inside the tesselation...
 def d_hausdorff(mu, triple):
-    '''
+    """
     mu - vec of measured mu at E1, E2
     triple - triangle of truth mu vector coordinates
-    '''
+    """
     # make sure all numpy arrays
     mu = np.array(mu)
     triple = np.array(triple)
@@ -70,10 +70,10 @@ def d_hausdorff(mu, triple):
 
 
 def d_point_line(P0, P1, P2):
-    '''
+    """
     calc distance between point P0 (x0,y0)
     and the line between P1 and P2
-    '''
+    """
     # unpack coords
     x0, y0 = P0
     x1, y1 = P1
@@ -134,7 +134,20 @@ def get_alphas(mu_test, mat_mus, mat_names, tri):
 
 
 def mmd(E1, E2, M1, M2, mats):
-    
+    """
+    input:
+        E1 - first monoenergy [keV]
+        E2 - second monoenergy [keV]
+        M1 - data acquired at first kVp [2D numpy array]
+        M2 - data acquired at second kVp [2D numpy array]
+        mats - list of material properties for the mat decomp. Formatted as a list of lists:
+            [['material_name', density [g/cm3], 'material composition [xcom format]',
+            ...  # for example:
+             ['water', 1.0, 'H(88.8)O(11.2)']]
+    output:
+        basis_img_dict - dict of basis material images (key = material name, item = image)
+                         pixel units are volume fraction (0 to 1)
+    """
     # `points` - mu(E1, E2) coordinates for each basis material
     points = []
     names = []
